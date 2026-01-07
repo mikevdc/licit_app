@@ -1,0 +1,108 @@
+name: licit_app
+
+services:
+  # =========================================
+  # BASE DE DATOS ACTUAL (MARIADB)
+  # =========================================
+  db:
+    image: mariadb:11.2
+    container_name: licit_mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASS}
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - licit_net
+    # Etiquetas para que Promtail sepa que esto es la DB
+    labels:
+      logging: "promtail"
+      service: "database"
+
+  # =========================================
+  # STACK PLG (Logs Infrastructure)
+  # =========================================
+
+  # 1. LOKI: El "Cerebro" que almacena los logs
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: licit_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - licit_net
+
+  # 2. PROMTAIL: El "Espía" que lee los logs de Docker
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: licit_promtail
+    volumes:
+      # Lee los logs internos del motor de Docker (JSONs)
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # Necesita acceso al socket para saber qué contenedores existen
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Tu configuración personalizada
+      - ./infra/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - licit_net
+
+  # 3. GRAFANA: La "Cara" visual
+  grafana:
+    image: grafana/grafana:latest
+    container_name: licit_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # <--- Password inicial
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - licit_net
+    depends_on:
+      - loki
+
+  # =========================================
+  # LICIT (APP FASTAPI)
+  # =========================================
+  backend:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile
+    container_name: licit_backend
+    restart: always
+    ports:
+      - "8000:80" # Acceso desde tu navegador localhost:8000. (Izquierda: PC / Derecha: Contenedor)
+    env_file:
+      - .env.prod # Carga DB_USER, DB_PASS, etc.
+    environment:
+      - ENV_STATE=prod  # <--- FORZAMOS MODO JSON/PROD
+      - API_V1_STR=/api/v1
+      # Sobrescribimos el host de la DB. 
+      # En local es 'localhost', pero en Docker es el nombre del servicio 'db'
+      - DB_HOST=db 
+    depends_on:
+      - db
+      - loki
+    networks:
+      - licit_net
+    # ETIQUETAS MÁGICAS PARA PROMTAIL
+    labels:
+      logging: "promtail"
+      service: "api_backend"     # <--- Así se filtrará en Grafana
+
+
+volumes:
+  mariadb_data: # Si no se pone nada después de :, estoy indicando vacío (en este caso, config por defecto)
+  grafana_data:
+
+networks:
+  licit_net:
+    driver: bridge

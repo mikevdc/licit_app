@@ -1,0 +1,2 @@
+Para montar el container de Docker con la aplicación, ejecutar desde la raíz el siguiente comando:
+    docker compose -f infra/docker-compose.yml --project-directory . --env-file .env.prod up -d --build
