@@ -9,15 +9,18 @@ class AuctionRepository(ABC):
     No sabe nada de SQLAlchemy, solo conoce modelos de dominio.
     """
 
+
+    @abstractmethod
+    async def create(self, auction: Auction) -> Auction:
+        """Persiste una nueva subasta en el sistema."""
+        raise NotImplementedError
+    
+
     @abstractmethod
     async def get_by_id(self, auction_id: UUID) -> Auction | None:
         """Recupera una subasta por su ID único."""
         raise NotImplementedError
     
-    @abstractmethod
-    async def save(self, auction: Auction) -> Auction:
-        """Persiste una nueva subasta en el sistema."""
-        raise NotImplementedError
     
     @abstractmethod
     async def update(self, auction: Auction) -> Auction:

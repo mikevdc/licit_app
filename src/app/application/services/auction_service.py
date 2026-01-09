@@ -1,5 +1,5 @@
 from app.application.ports.auction_repository import AuctionRepository
-from app.api.v1.schemas.auction import AuctionCreate
+from app.api.v1.schemas.auction import AuctionCreate, AuctionResponse
 from app.domain.models import Auction
 from app.domain.exceptions import AuctionNotFoundError
 from uuid import UUID
@@ -11,11 +11,11 @@ class AuctionService:
         self.logger = logger
 
 
-    async def create_auction(self, auction_in: AuctionCreate) -> Auction:
+    async def create_auction(self, auction_in: AuctionCreate, seller_id: UUID) -> AuctionResponse:
         """
         Caso de Uso: Crear una nueva subasta.
         """
-        self.logger.info("Se va a crear la nueva subasta.")
+        self.logger.info(f"Creando subasta para el usuario {seller_id}.")
 
         # Transformamos el esquema de entrada en un modelo de Dominio puro
         # Aquí es donde el Dominio genera su propio UUID.
@@ -24,7 +24,7 @@ class AuctionService:
             starting_price = auction_in.starting_price,
             start_time = auction_in.start_time,
             end_time = auction_in.end_time,
-            seller_id = auction_in.seller_id
+            seller_id = seller_id
         )
 
         try:

@@ -1,29 +1,56 @@
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 from uuid import UUID, uuid4
 
+@dataclass
+class User:
+    id: UUID = field(default_factory = uuid4)
+    username: str
+    email: str
+    password_hash: str
+    is_active: bool = True
+    is_superuser: bool = False
 
-class User(BaseModel):
-    id: UUID = Field(default_factory = uuid4)
-    username: str = Field(..., min_length = 3, max_length = 50, description = "Nombre único del usuario")
-    email: EmailStr = Field(..., description = "Correo electrónico válido")
-    password_hash: str = Field(...)
-    is_active: bool = Field(default = True)
-    created_at: datetime = Field(default_factory = lambda: datetime.now(timezone.utc))
+    # Auditoría
+    created_at: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
+    deleted_at: Optional[datetime] = None
 
 
-    def activate(self):
+    def delete(self):
         """
-        Activa el usuario
-        """
-        self.is_active = True
-
-    
-    def deactivate(self):
-        """
-        Desactiva el usuario
+        Lógica de borrado lógico (Soft Delete).
+        Un usuario borrado de desactiva y se marca la fecha.
         """
         self.is_active = False
+        now = datetime.now(timezone.utc)
+        self.deleted_at = now
+        self.updated_at = now
+
+    
+    def reactivate(self):
+        """Reactiva un usuario borrado."""
+        self.is_active = True
+        self.deleted_at = None
+        self.updated_at = datetime.now(timezone.utc)
+
+    
+    def update_details(self, email: str = None, username: str = None):
+        """
+        Método centralizado para modificar datos del usuario.
+        Garantiza que updated_at SIEMPRE se refresque.
+        """
+        changed = False
+        if email and email != self.email:
+            self.email = email
+            changed = True
+        if username and username != self.username:
+            self.username = username
+            changed = True
+        
+        if changed:
+            self.updated_at = datetime.now(timezone.utc)
     
 
     def __str__(self):

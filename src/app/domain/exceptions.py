@@ -8,13 +8,24 @@ class LicitError(Exception):
         self.message = message
         super().__init__(self.message)
 
+class AuctionError(LicitError):
+    """Lanzada cuando se produce un error en una subasta."""
+    pass
 
 class AuctionNotFoundError(LicitError):
     """Lanzada cuando una subasta no existe."""
     pass
 
+class AuctionCreationError(LicitError):
+    """Lanzada cuando se produce un error al crear la subasta."""
+    pass
+
 class UserNotFoundError(LicitError):
     """Lanzada cuando un usuario no existe."""
+    pass
+
+class UserAlreadyExistsError(LicitError):
+    """Lanzada cuando un usuario ya existe."""
     pass
 
 class InvalidBidError(LicitError):

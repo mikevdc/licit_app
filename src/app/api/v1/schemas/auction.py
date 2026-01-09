@@ -1,15 +1,18 @@
+from app.domain.enums import AuctionState
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field, model_validator
-from typing import Annotated
+from decimal import Decimal
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+from typing import Annotated, Optional
 from uuid import UUID
 
 
-class AuctionCreate(BaseModel):
+class AuctionBase(BaseModel):
     title: Annotated[str, Field(min_length = 3, max_length = 100)]
-    starting_price: Annotated[float, Field(gt = 0)]
-    start_time: datetime
+    description: Optional[str] = None
+    starting_price: Annotated[Decimal, Field(gt = 0)]
+    start_time: Optional[datetime] = None # Si es None, empieza ya
     end_time: datetime
-    seller_id: UUID
+    state: AuctionState = AuctionState.ACTIVE
 
 
     @model_validator(mode = 'after')
@@ -25,3 +28,20 @@ class AuctionCreate(BaseModel):
             raise ValueError("La subasta no puede empezar en el pasado.")
         
         return self
+
+
+class AuctionCreate(AuctionBase):
+    pass # Es igual a la base
+
+
+class AuctionResponse(AuctionCreate):
+    id: UUID
+    current_price: Decimal
+    seller_id: UUID
+    winner_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
+
+    # Configuración para leer desde ORM
+    model_config = ConfigDict(from_attributes = True)

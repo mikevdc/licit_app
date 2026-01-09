@@ -1,18 +1,22 @@
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from decimal import Decimal
+from typing import Optional
 from uuid import UUID, uuid4
 
 
-class Bid(BaseModel):
-    id: UUID = Field(default_factory = uuid4)
-    amount: float = Field(gt = 0)
-    created_at: datetime = Field(default_factory = lambda: datetime.now(timezone.utc))
-    bidder_id: UUID
+@dataclass
+class Bid:
+    id: UUID = field(default_factory = uuid4)
+    amount: Decimal = field(gt = 0)
     auction_id: UUID
+    bidder_id: UUID
+
+    # Auditoría
+    created_at: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
+    deleted_at: Optional[datetime] = None
 
 
-    def is_bid_bigger(self, value):
-        """
-        Comprueba si esta puja es mayor que un valor dado
-        """
-        return self.amount > value
+    def delete(self):
+        """Realiza un Soft Delete sobre la puja"""
+        self.deleted_at = datetime.now(timezone.utc)

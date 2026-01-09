@@ -1,7 +1,6 @@
 from app.infrastructure.db.base import Base
 from datetime import datetime, timezone
 from sqlalchemy import String, Boolean, DateTime
-from sqlalchemy.dialects.mysql import CHAR # Para el UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID, uuid4
@@ -21,23 +20,32 @@ class UserORM(Base):
 
     username: Mapped[str] = mapped_column(String(50), unique = True, index = True, nullable = False)
     email: Mapped[str] = mapped_column(String(255), unique = True, index = True, nullable = False)
-
-    # Seguridad: Aquí guardaremos el hash, NUNCA la contraseña en plano
     password_hash: Mapped[str] = mapped_column(String(255), nullable = False)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default = True)
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone = True), nullable = True)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default = False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), default = lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), default = lambda: datetime.now(timezone.utc), onupdate = lambda: datetime.now(timezone.utc))
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone = True), nullable = True)
 
     # RELACIONES
-    # Un usuario puede crear muchas subastas
-    auctions: Mapped[List["AuctionORM"]] = relationship(
+    # 1. Subastas que realiza este usuario
+    auctions_created: Mapped[List["AuctionORM"]] = relationship(
         "AuctionORM",
-        back_populates = "seller" # Debo asegurarme de que en AuctionORM el campo se llame 'seller'
+        back_populates = "seller", # Debo asegurarme de que en AuctionORM el campo se llame 'seller'
+        foreign_keys = "[AuctionORM.seller_id]" # Especifico qué FK usar
+    )
+
+    # 2. Subastas que ha ganado este usuario
+    auctions_won: Mapped[List["AuctionORM"]] = relationship(
+        "AuctionORM",
+        back_populates = "winner", # Debo asegurarme de que en AuctionORM el campo se llame 'winner'
+        foreign_keys = "[AuctionORM.winner_id]"
     )
 
     # Un usuario puede realizar muchas pujas
     bids: Mapped[List["BidORM"]] = relationship(
         "BidORM",
-        back_populates = "bidder" # Debo asegurarme de que en BidORM el campo se llame 'seller'
+        back_populates = "bidder" # Debo asegurarme de que en BidORM el campo se llame 'bidder'
     )
