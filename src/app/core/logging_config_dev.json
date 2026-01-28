@@ -5,7 +5,7 @@
         "max_age_hours": 24
     },
     "retention": "7 days",
-    "modules": ["auctions", "users", "system", "access"],
+    "modules": ["auctions", "users", "bids", "system", "access"],
     "enqueue": true,
     "backtrace": true,
     "delay": true

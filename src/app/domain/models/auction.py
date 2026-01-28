@@ -10,17 +10,18 @@ from uuid import UUID, uuid4
 
 @dataclass
 class Auction:
-    id: UUID = field(default_factory = uuid4)
     title: str
-    description: str
+    description: Optional[str]
     starting_price: Decimal
-    start_time: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
     end_time: datetime
     seller_id: UUID
     state: AuctionState = AuctionState.ACTIVE
     current_price: Optional[Decimal] = None
     winner_id: Optional[UUID] = None
 
+    id: UUID = field(default_factory = uuid4)
+    start_time: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
+    
     bids: list[Bid] = field(default_factory = list)
 
     # Auditoría
@@ -47,6 +48,38 @@ class Auction:
         # 2. Debe estar dentro del rango de tiempo
         if not(self.start_time <= datetime.now(timezone.utc) <= self.end_time):
             return False
+        return True
+    
+
+    def update_details(self, title: str = None, description: str = None) -> bool:
+        """
+        Método centralizado para modificar el título y/o la descripción de la subasta.
+        Garantiza que updated_at SIEMPRE se refresque.
+        """
+        changed = False
+        if title and title != self.title:
+            self.title = title
+            changed = True
+        if description and description != self.description:
+            self.description = description
+            changed = True
+        
+        if changed:
+            self.updated_at = datetime.now(timezone.utc)
+
+        return changed
+
+    
+    def cancel(self) -> bool:
+        """Devuelve True si se canceló, False si ya estaba cancelada"""
+        if self.state == AuctionState.CANCELLED:
+            return False
+        
+        if self.state == AuctionState.COMPLETED:
+            raise ValueError("No se puede cancelar una subasta finalizada")
+        
+        self.state = AuctionState.CANCELLED
+        self.updated_at = datetime.now(timezone.utc)
         return True
 
 

@@ -7,6 +7,7 @@ from uuid import UUID
 
 class BidBase(BaseModel):
     amount: Decimal
+    auction_id: UUID
 
 
 class BidCreate(BidBase):
@@ -17,7 +18,6 @@ class BidResponse(BidBase):
     id: UUID
     created_at: datetime
     deleted_at: Optional[datetime] = None
-    auction_id: UUID
     bidder_id: UUID
 
     # Configuración para leer desde ORM

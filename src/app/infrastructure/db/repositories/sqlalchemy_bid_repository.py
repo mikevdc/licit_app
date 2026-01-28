@@ -1,12 +1,11 @@
-from app.domain.exceptions import AuctionError
-from app.domain.models.auction import Auction, Bid
-from app.infrastructure.db.models.auction_orm import AuctionORM, BidORM
 from app.application.ports.bid_repository import BidRepository
+from app.domain.exceptions import AuctionError
+from app.domain.models.bid import Bid
+from app.infrastructure.db.models.bid_orm import BidORM
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 
@@ -44,7 +43,7 @@ class SQLAlchemyBidRepository(BidRepository):
     async def create(self, bid: Bid) -> Bid:
         bid_orm = self._to_orm(bid)
         try:
-            self.sesion.add(bid_orm)
+            self.session.add(bid_orm)
             await self.session.commit()
 
         except IntegrityError as e:

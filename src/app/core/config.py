@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     API_V1_STR: str
 
-
     # Variables de DB (se llenarán desde los archivos .env)
     DB_USER: str
     DB_PASS: str

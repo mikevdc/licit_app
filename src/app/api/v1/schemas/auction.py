@@ -16,16 +16,17 @@ class AuctionBase(BaseModel):
 
 
     @model_validator(mode = 'after')
-    def validate_dates(self) -> 'AuctionCreate':
+    def validate_dates(self) -> 'AuctionBase':
         now = datetime.now(timezone.utc)
 
-        # 1. ¿La subasta termina antes de empezar?
-        if self.start_time >= self.end_time:
-            raise ValueError("La fecha de finalización debe ser posterior al inicio.")
-        
-        # 2. ¿La subasta intenta empezar en el pasado?
-        if self.start_time < now:
-            raise ValueError("La subasta no puede empezar en el pasado.")
+        if self.start_time:
+            # 1. ¿La subasta termina antes de empezar?
+            if self.start_time >= self.end_time:
+                raise ValueError("La fecha de finalización debe ser posterior al inicio.")
+            
+            # 2. ¿La subasta intenta empezar en el pasado?
+            if self.start_time < now:
+                raise ValueError("La subasta no puede empezar en el pasado.")
         
         return self
 

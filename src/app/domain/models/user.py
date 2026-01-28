@@ -5,12 +5,12 @@ from uuid import UUID, uuid4
 
 @dataclass
 class User:
-    id: UUID = field(default_factory = uuid4)
     username: str
     email: str
     password_hash: str
     is_active: bool = True
     is_superuser: bool = False
+    id: UUID = field(default_factory = uuid4)
 
     # Auditoría
     created_at: datetime = field(default_factory = lambda: datetime.now(timezone.utc))
@@ -36,7 +36,7 @@ class User:
         self.updated_at = datetime.now(timezone.utc)
 
     
-    def update_details(self, email: str = None, username: str = None):
+    def update_details(self, email: str = None, username: str = None, is_active: bool = None) -> bool:
         """
         Método centralizado para modificar datos del usuario.
         Garantiza que updated_at SIEMPRE se refresque.
@@ -48,9 +48,14 @@ class User:
         if username and username != self.username:
             self.username = username
             changed = True
+        if is_active is not None and is_active != self.is_active:
+            self.is_active = is_active
+            changed = True
         
         if changed:
             self.updated_at = datetime.now(timezone.utc)
+
+        return changed
     
 
     def __str__(self):

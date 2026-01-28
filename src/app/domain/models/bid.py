@@ -7,10 +7,10 @@ from uuid import UUID, uuid4
 
 @dataclass
 class Bid:
-    id: UUID = field(default_factory = uuid4)
-    amount: Decimal = field(gt = 0)
+    amount: Decimal
     auction_id: UUID
     bidder_id: UUID
+    id: UUID = field(default_factory = uuid4)
 
     # Auditoría
     created_at: datetime = field(default_factory = lambda: datetime.now(timezone.utc))

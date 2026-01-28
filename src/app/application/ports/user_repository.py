@@ -31,6 +31,7 @@ class UserRepository(ABC):
         """Recupera un usuario por su username, o por su email."""
         raise NotImplementedError
 
+
     @abstractmethod
     async def update(self, user: User) -> User:
         """Actualiza la información de un usuario"""

@@ -2,15 +2,15 @@ from app.application.ports.auction_repository import AuctionRepository
 from app.application.ports.bid_repository import BidRepository
 from app.api.v1.schemas.bid import BidCreate, BidResponse
 from app.domain.enums import AuctionState
-from app.domain.models import Bid
+from app.domain.models.bid import Bid
 from uuid import UUID
 
 
 class BidService:
-    def __init__(self, bid_repository: BidRepository, auction_repository: AuctionRepository, logger):
-        self.bid_repository = bid_repository
-        self.auction_repository = auction_repository
+    def __init__(self, logger, bid_repo: BidRepository, auction_repo: AuctionRepository):
         self.logger = logger
+        self.bid_repo = bid_repo
+        self.auction_repo = auction_repo
 
     
     async def place_bid(self, bid_in: BidCreate, auction_id: UUID, bidder_id: UUID) -> Bid:
@@ -22,7 +22,7 @@ class BidService:
         4. Actualiza la subasta (nuevo precio/ganador).
         """
         # 1. Obtener subasta (con sus pujas actuales cargadas, si es posible)
-        auction = await self.auction_repository.get_by_id(auction_id)
+        auction = await self.auction_repo.get_by_id(auction_id)
         if not auction:
             raise ValueError("Subasta no encontrada")
         
@@ -30,17 +30,17 @@ class BidService:
         new_bid = auction.place_bid(amount = bid_in.amount, bidder_id = bidder_id)
 
         # 3. Persistir puja
-        saved_bid = await self.bid_repository.create(new_bid)
+        saved_bid = await self.bid_repo.create(new_bid)
 
         # 4. Persistir cambios en subasta (precio y ganador actualizados)
-        await self.auction_repository.update(auction)
+        await self.auction_repo.update(auction)
 
         return saved_bid
     
 
     async def get_auction_bids(self, auction_id: UUID) -> list[Bid]:
         """Obtiene el historial de pujas activas."""
-        all_bids = await self.bid_repository.get_by_auction_id(auction_id)
+        all_bids = await self.bid_repo.get_by_auction_id(auction_id)
         # Filtramos en memoria por si el repositorio devuelve borradas (doble seguridad)
         return [b for b in all_bids if b.deleted_at is None]
     
@@ -51,7 +51,7 @@ class BidService:
         Si la puja eliminada era la ganadora, recalcula el estado de la subasta.
         """
         # 1. Recuperar la puja.
-        bid = await self.bid_repository.get_by_id(bid_id)
+        bid = await self.bid_repo.get_by_id(bid_id)
         if not bid:
             raise ValueError("Puja no encontrada.")
         
@@ -60,14 +60,14 @@ class BidService:
             raise PermissionError("No tienes permiso para retirar esta puja.")
         
         # 3. Recuperar la subasta asociada
-        auction = await self.auction_repository.get_by_id(bid.auction_id)
+        auction = await self.auction_repo.get_by_id(bid.auction_id)
 
         # Validar: No se pueden retirar pujas si la subasta ya acabó
         if not auction.is_open and auction.state != AuctionState.ACTIVE:
             raise ValueError("No se puede retirar una puja de una subasta finalizada.")
         
         # 4. Ejecutar el borrado lógico
-        await self.bid_repository.delete(bid_id)
+        await self.bid_repo.delete(bid_id)
 
         # 5. Recalculo el estado.
         # Verifico si la puja borrada era la ganadora actual
@@ -75,7 +75,7 @@ class BidService:
 
         if is_winner:
             # Necesitamos encontrar al "Segundo Mejor Postor"
-            all_bids = await self.bid_repository.get_by_auction_id(auction.id)
+            all_bids = await self.bid_repo.get_by_auction_id(auction.id)
 
             # Filtramos la que acabamos de borrar y cualquier otra borrada y asumimos que el repositorio las devuelve ordenadas por monto DESC
             active_bids = [
@@ -94,4 +94,4 @@ class BidService:
                 auction.winner_id = next_best_bid.bidder_id
             
             # Guardamos el nuevo estado corregido de la subasta
-            await self.auction_repository.update(auction)
+            await self.auction_repo.update(auction)

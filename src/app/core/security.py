@@ -16,7 +16,7 @@ def get_password_hash(password: str) -> str:
     """Genera el hash Argon2."""
     return password_hash.hash(password)
 
-def create_access_token(subject: str | Any, expires_delta: timedelta = None) -> str:
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
     """Crea el JWT usando PyJWT."""
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta

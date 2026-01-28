@@ -1,6 +1,7 @@
 from app.domain.exceptions import AuctionCreationError
 from app.domain.models.auction import Auction, Bid
-from app.infrastructure.db.models.auction_orm import AuctionORM, BidORM
+from app.infrastructure.db.models.auction_orm import AuctionORM
+from app.infrastructure.db.models.bid_orm import BidORM
 from app.application.ports.auction_repository import AuctionRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -32,7 +32,7 @@ class InterceptHandler(logging.Handler):
 
         # 3. Encontrar el origen del mensaje para el traceback
         frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
+        while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
 
@@ -100,7 +100,9 @@ def setup_logging():
         # 2. Lógica para inyectar datos dinámicos en cada record
         def patcher(record):
             
-            record["extra"]["request_id"] = request_id_var.get() or "N/A"
+            if "request_id" not in record["extra"] or record["extra"]["request_id"] == "N/A":
+                record["extra"]["request_id"] = request_id_var.get() or "N/A"
+
             record["extra"]["thread_name"] = threading.current_thread().name
 
         logger.configure(patcher = patcher)
@@ -148,7 +150,7 @@ def setup_logging():
             )
 
         # 5. Sink para consola (opcional para desarrollo)
-        logger.add(sink = os.sys.stdout, level = "INFO", colorize = True)
+        logger.add(sink = sys.stdout, level = "INFO", colorize = True)
         print("🛠️ Logging configurado en modo DESARROLLO (Ficheros locales)")
 
         # 6. Silenciar los loggers originales y redirigirlos
