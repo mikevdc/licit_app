@@ -91,11 +91,20 @@ class SQLAlchemyAuctionRepository(AuctionRepository):
             await self.session.commit()
 
         except IntegrityError as e:
-            await self.sesion.rollback()
+            await self.session.rollback()
             raise AuctionCreationError(f"No se pudo crear la subasta. Verifica que el vendedor {auction.seller_id} exista.")
         
         return auction
     
+
+    async def get_all(self) -> list[Auction]:
+        stmt = (
+            select(AuctionORM)
+        )
+        result = await self.session.execute(stmt)
+        auction_orm = result.scalars().all()
+        return [self._to_domain(auction) for auction in auction_orm]
+
 
     async def get_by_id(self, auction_id: UUID) -> Auction | None:
         # Usamos selectinload para traer las pujas eficientemente en la misma query (o query secundaria optimizada)

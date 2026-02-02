@@ -29,6 +29,13 @@ async def create_auction(
         raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = str(e))
 
 
+@router.get("/", response_model = list[AuctionResponse], status_code = 200)
+async def list_auctions(
+    service: ServiceDep
+):
+    return await service.list_auctions()
+
+
 @router.get("/{auction_id}", response_model = AuctionResponse)
 async def get_auction(
     auction_id: UUID, 

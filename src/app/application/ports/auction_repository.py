@@ -15,6 +15,10 @@ class AuctionRepository(ABC):
         """Persiste una nueva subasta en el sistema."""
         raise NotImplementedError
     
+    @abstractmethod
+    async def get_all(self) -> list[Auction]:
+        """Obtiene todas las subastas."""
+        raise NotImplementedError
 
     @abstractmethod
     async def get_by_id(self, auction_id: UUID) -> Auction | None:

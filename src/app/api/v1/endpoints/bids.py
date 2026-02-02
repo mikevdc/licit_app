@@ -2,10 +2,7 @@ from app.api.dependencies.bids import get_bid_service
 from app.api.dependencies.auth import get_current_user
 from app.api.v1.schemas.bid import BidCreate, BidResponse
 from app.application.services.bid_service import BidService
-from app.domain.exceptions import AuctionCreationError
-from app.domain.models.auction import Auction
 from app.domain.models.user import User
-from app.domain.models.bid import Bid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Annotated
 from uuid import UUID

@@ -39,6 +39,18 @@ class AuctionService:
             raise e
 
 
+    async def list_auctions(self) -> list[Auction]:
+        """
+        Obtiene todas las subastas
+        """
+        self.logger.info(f"Se van a obtener todas las subastas")
+        try:
+            return await self.auction_repo.get_all()
+        except Exception as e:
+            self.logger.error(f"{e}", exc_info = True)
+            raise e
+
+
     async def get_auction(self, auction_id: UUID) -> Auction:
         """
        Obtiene una subasta por ID.
